@@ -47,7 +47,9 @@ var TimelinePlugin = function() {
   //   start: number,
   //   end: number
   // }>
-  this.timeline = [];
+  this.testTimeline = [];
+  this.seleniumTimeline = [];
+  this.sauceTimeline = [];
 
   this.clientLogAvailable = false;
   this.outdir;
@@ -196,8 +198,12 @@ TimelinePlugin.prototype.outputResults = function(done) {
   }
   var stream = fs.createReadStream(
       path.resolve(__dirname, 'indextemplate.html'));
-  var outfile = path.resolve(this.outdir, 'timeline.json');
-  fs.writeFileSync(outfile, JSON.stringify(this.timeline));
+  var testOutfile = path.join(this.outdir, 'testTimeline.json');
+  var seleniumOutfile = path.join(this.outdir, 'seleniumTimeline.json');
+  var sauceOutfile = path.join(this.outdir, 'sauceTimeline.json');
+  fs.writeFileSync(testOutfile, JSON.stringify(this.testTimeline));
+  fs.writeFileSync(seleniumOutfile, JSON.stringify(this.seleniumTimeline));
+  fs.writeFileSync(sauceOutfile, JSON.stringify(this.sauceTimeline));
   stream.pipe(fs.createWriteStream(path.resolve(this.outdir, this.config.outputHtmlFileName || 'index.html')));
   stream.on('end', done);
 };
@@ -226,7 +232,7 @@ TimelinePlugin.prototype.setup = function() {
         timelineEvent.command.name_ == 'setScriptTimeout') {
       self.testProcessSetTimeoutTimestamp = timelineEvent.start;
     }
-    self.timeline.push(timelineEvent);
+    self.testTimeline.push(timelineEvent);
     var usesPromises = false; // Unsure if .execute() returns a promise
     var wrappedCallback = function(var_args) {
     };
@@ -285,7 +291,7 @@ TimelinePlugin.prototype.teardown = function() {
     browser.manage().logs().get('client').then(function(result) {
       var serverTimeline = TimelinePlugin.parseArrayLog(
           result, 'Selenium Client', self.testProcessSetTimeoutTimestamp);
-      self.timeline = self.timeline.concat(serverTimeline);
+      self.seleniumTimeline = serverTimeline;
       deferred.resolve();
     });
   } else {
@@ -332,7 +338,7 @@ TimelinePlugin.prototype.postResults = function() {
                     sauceLog,
                     'SauceLabs Server',
                     self.testProcessSetTimeoutTimestamp);
-            self.timeline = self.timeline.concat(sauceTimeline);
+            self.sauceTimeline = sauceTimeline;
             self.outputResults(deferred.resolve);
           });
 

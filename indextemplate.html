@@ -3,24 +3,14 @@
     <script type="text/javascript" src="https://www.google.com/jsapi"></script>
     <script type="text/javascript">
       google.load("visualization", "1", {packages:["timeline"]});
-      google.setOnLoadCallback(drawChart);
+      google.setOnLoadCallback(function() {
+          drawChart('testTimeline', 'testTimeline.json');
+          drawChart('seleniumTimeline', 'seleniumTimeline.json');
+          drawChart('sauceTimeline', 'sauceTimeline.json');
+      });
 
-      function drawChart() {
-        var xmlhttp = new XMLHttpRequest();
-        var url = "timeline.json";
-
-        xmlhttp.onreadystatechange = function() {
-        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-            var data = JSON.parse(xmlhttp.responseText);
-            actualDraw(data);
-          }
-        }
-
-        xmlhttp.open("GET", url, true);
-        xmlhttp.send();
-
-        function actualDraw(data) {
-          var container = document.getElementById('timeline');
+      function actualDraw(id, data) {
+          var container = document.getElementById(id);
           var chart = new google.visualization.Timeline(container);
           var dataTable = new google.visualization.DataTable();
 
@@ -29,28 +19,43 @@
           dataTable.addColumn({ type: 'number', id: 'Start' });
           dataTable.addColumn({ type: 'number', id: 'End' });
           for (var i = 0; i < data.length; ++i) {
-            var event = data[i];
-            if (!event.start && event.end) {
-              continue;
-            }
-            var row = [];
-            row.push(event.source);
-            row.push(event.command.name_ || event.command);
-            row.push(event.start);
-            row.push(event.end);
-            dataTable.addRow(row);
+              var event = data[i];
+              if (!event.start && event.end) {
+                  continue;
+              }
+              var row = [];
+              row.push(event.id + ' : ' + event.source);
+              row.push(event.command.name_ || event.command);
+              row.push(event.start);
+              row.push(event.end);
+              dataTable.addRow(row);
           }
 
           var options = {
-            timeline: { colorByRowLabel: true }
+              timeline: { colorByRowLabel: true }
           };
 
           chart.draw(dataTable, options);
-        }
+      }
+
+      function drawChart(id, url) {
+          var xmlhttp = new XMLHttpRequest();
+
+          xmlhttp.onreadystatechange = function() {
+              if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                  var data = JSON.parse(xmlhttp.responseText);
+                  actualDraw(id, data);
+              }
+          }
+
+          xmlhttp.open("GET", url, true);
+          xmlhttp.send();
       }
     </script>
   </head>
   <body>
-    <div id="timeline" style="width: 900px; height: 400px;"></div>
+    <div id="testTimeline" style="width: 900px; display: inline-block; height: 100%;"></div>
+    <div id="seleniumTimeline" style="width: 900px; display: inline-block; height: 100%;"></div>
+    <div id="sauceTimeline" style="width: 900px; display: inline-block; height: 100%;"></div>
   </body>
 </html>
